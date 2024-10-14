@@ -1,0 +1,106 @@
+﻿@inject IDialogService Dialog
+
+
+
+
+<MudDialog>
+
+    
+        <DialogContent>
+            <MudText Typo="Typo.h6"><b>Search An Item To Add</b></MudText>
+            <MudPaper Class="mud-theme-primary" Width="100%" Style="visibility: hidden" Height="20px" />
+
+                <MudPaper Class="d-flex flex-column flex-grow-1" Elevation="0">
+                <FoodSearch SelectedFoodsChanged="OnSelectedFoodsChanged"></FoodSearch>
+
+
+                <MudPaper Class="mud-theme-primary" Width="100%" Style="visibility: hidden" Height="130px" />
+
+
+
+                            @* ADD CUSTOM ITEM    *@
+                <MudText Typo="Typo.h6"><b>Create Custom Item</b></MudText>
+                <MudPaper Class="mud-theme-primary" Width="100%" Style="visibility: hidden" Height="50px" />
+
+
+                <MudPaper Class="d-flex flex-column flex-grow-1" Width="100%" Elevation="0">
+                    <MudPaper Class="d-flex flex-row flex-grow-1 gap-4" Elevation="0">
+
+                        <MudText Typo="Typo.body1"><b>Name</b></MudText>
+                        <MudItem xs="12" sm="6" md="4">
+                            <MudTextField @bind-Value="CustomItemName" Label="Name" Variant="Variant.Filled"></MudTextField>
+                        </MudItem>
+
+                        <MudText Typo="Typo.body1"><b>Calories</b></MudText>
+                        <MudItem xs="12" sm="6" md="4">
+                            <MudNumericField HideSpinButtons="true" @bind-Value="CustomItemCalories" Label="Calories" Variant="Variant.Filled" Min="0" Max="200000" />
+                        </MudItem>
+
+                    </MudPaper>
+
+    
+                    <MudPaper Class="mud-theme-primary" Width="100%" Style="visibility: hidden" Height="25px" />
+                    <MudButton Variant="Variant.Filled" class="button-color" Href="/" @onclick="SaveItem">Add Custom Item</MudButton>
+ 
+                </MudPaper>
+
+            </MudPaper>
+
+        </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+    </DialogActions>
+</MudDialog>
+
+
+
+@code {
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+    [Parameter] public NutritionCalculator ItemCalculator { get; set; } = new NutritionCalculator();
+    private readonly DialogOptions _fullScreen = new() { FullScreen = true, CloseButton = true };
+    private void Cancel() => MudDialog.Cancel();
+    private Dictionary<string, object> parentSelectedFoods = new Dictionary<string, object>();
+    public int CustomItemCalories { get; set; }
+    public string CustomItemName { get; set; }
+
+    private async Task OnSelectedFoodsChanged(Dictionary<string, object> selectedFoods) // Update the parent's selected foods based on the event callback from the child
+    {
+        parentSelectedFoods = selectedFoods;
+        await OpenConfirmItemAsync(_fullScreen);
+    }    
+    
+
+
+    private void SaveItem()
+    {
+        AddCustomItem(new SingleItemInfo
+            {
+                Name = CustomItemName,
+                Calories = CustomItemCalories
+            });
+    }
+
+    private void AddCustomItem(SingleItemInfo newItem)
+    {
+        ItemCalculator.AddItem(newItem);
+        StateHasChanged();
+    }
+
+
+
+    private async Task OpenConfirmItemAsync(DialogOptions options)
+    {
+        var parameters = new DialogParameters //Open the next dialogbox for confirming the item
+        {
+            { "ItemCalculator", ItemCalculator },
+            { "_item", parentSelectedFoods }
+        };
+
+        var dialog = await Dialog.ShowAsync<ConfirmItem>(null, parameters, options);
+        var result = await dialog.Result;
+    }
+
+
+
+
+}

@@ -1,0 +1,176 @@
+﻿@page "/"
+@inject IDialogService Dialog
+
+
+<PageTitle>CalorieTracker</PageTitle>
+
+
+
+
+<MudText Typo="Typo.h5" Class="ml-3">Calorie Tracker</MudText>
+
+
+<MudPaper Class="d-flex flex-column flex-grow-1 gap-4" Elevation="0">
+
+    <MudPaper Class="d-flex flex-row flex-grow-1 gap-4" Elevation="0">
+
+        <MudPaper Class="d-flex flex-column flex-grow-1 gap-4 holding-box" Elevation="2" Width="50%">
+
+            <MudText Typo="Typo.h4" Class="ml-3">Items</MudText>
+            <MudPaper Class="mud-theme-" Width="100%" Height="8px" style="background-color: #000000"/>
+
+@*           -----------------------------------------------------------------------  Chipset for each ingredient     ------------------------------------------------------------------                     *@
+            <MudChipSet T="SingleItemInfo" AllClosable OnClose="Closed" style="width=100%">
+                @foreach (var item in ItemCalculator.Items)
+                {
+                    <MudChip Value="@item" Text="@item.Name">
+                        <MudImage Src="images/20230827.jpg" Alt="Mony the dog" Elevation="25" Class="rounded-lg" Width="20" Height="20" />
+                        <MudText class="long-text" Typo="Typo.body2">Name = @item.Name</MudText>
+                        <MudNumericField HideSpinButtons="true" @bind-Value="IntValue" Variant="Variant.Text" Min="0" />
+                        <MudText Typo="Typo.body2">g</MudText>
+                    </MudChip>
+                }
+            </MudChipSet>
+
+            <div class="d-flex flex-column align-center">
+                <MudButton StartIcon="@Icons.Material.Filled.Add" OnClick="Add">Add chip</MudButton>
+            </div>
+
+        </MudPaper>
+
+
+        <MudPaper Class="d-flex flex-column flex-grow-1 gap-4 holding-box" Elevation="2" Width="50%">
+
+ @*           -----------------------------------------------------------------------  Nutrition Facts     ------------------------------------------------------------------                     *@
+            <MudText Typo="Typo.h4" Class="ml-3">Nutrition Facts</MudText>
+            <MudPaper Class="mud-theme-" Width="100%" Height="8px" style="background-color: #000000"/>
+
+            
+            @if (ItemCalculator.NutritionFact == null)
+            {
+                <MudProgressCircular Color="Color.Default" Indeterminate="true" />
+            }
+            else
+            {
+                <MudText Typo="Typo.h5" Class="ml-3">Calories <b>@ItemCalculator.NutritionFact.Calories</b></MudText>
+                <MudPaper Class="mud-theme-" Width="100%" Height="4px" style="background-color: #000000"/>
+
+                <MudText Typo="Typo.h6" Class="ml-3">Fat <b>@ItemCalculator.NutritionFact.TotalFat g</b></MudText>
+                <MudText Typo="Typo.h6" Class="ml-3">Sodium <b>@ItemCalculator.NutritionFact.Sodium g</b></MudText>
+                <MudText Typo="Typo.h6" Class="ml-3">Carbs <b>@ItemCalculator.NutritionFact.Carbohydrates g</b></MudText>
+                <MudText Typo="Typo.h6" Class="ml-3">Protein <b>@ItemCalculator.NutritionFact.Protein g</b></MudText>
+                <MudText Typo="Typo.h6" Class="ml-3">Sugar <b>@ItemCalculator.NutritionFact.Sugars g</b></MudText>
+                <MudText Typo="Typo.h6" Class="ml-3">Fiber <b>@ItemCalculator.NutritionFact.Fiber g</b></MudText>
+            }
+
+
+        </MudPaper>
+
+    </MudPaper>
+
+    <MudButton Variant="Variant.Filled" class="button-color" @onclick="@(() => OpenAddNewItemAsync(_fullScreen))">Add New Item</MudButton>
+
+</MudPaper>
+
+
+<style>
+    .holding-box {
+        background-color: antiquewhite;
+    }
+
+    .mud-chip {
+        width: 95%;
+    }
+
+        .mud-chip > .mud-chip-content {
+            align-items: center;
+            display: inline-flex;
+            height: 100%;
+            max-width: 100%;
+            justify-content: space-between;
+            width: 100%;
+        }
+
+    .mud-input-control {
+        border: 0;
+        padding: 0;
+        display: flex;
+        flex: 1 1 auto;
+        max-width: 15%;
+        position: relative;
+        flex-direction: column;
+        vertical-align: top;
+        background-color: aliceblue;
+    }
+
+
+    .long-text {
+        max-width: 49%;
+        overflow: hidden;
+    }
+
+    .button-color {
+        background-color: #FFCC80;
+    }
+
+    .mud-button:hover {
+        background-color: #ffcc80a1;
+    }
+    
+</style>
+
+
+
+@code {
+
+    public int IntValue { get; set; }
+    private int _i = 0;
+
+    private NutritionCalculator ItemCalculator = new NutritionCalculator();
+    private readonly DialogOptions _fullScreen = new() { FullScreen = true, CloseButton = true };
+
+
+    public void Closed(MudChip<SingleItemInfo> chip)
+    {
+        if (chip.Value != null)
+        {
+            //ItemCalculator.Items.Remove(chip.Value);
+            RemoveItem(chip.Value);
+        }
+    }
+
+
+    private async Task OpenAddNewItemAsync(DialogOptions options) // Open the dialogbox for "AddNewItem.razor"
+    {
+        var parameters = new DialogParameters
+        {
+            { "ItemCalculator", ItemCalculator }, // Include the parameters to the dialog
+        };
+
+        var dialog = await Dialog.ShowAsync<AddNewItem>(null, parameters, options);
+        var result = await dialog.Result;
+    }
+
+
+    private void AddNewItem(SingleItemInfo newItem) 
+    {
+        ItemCalculator.AddItem(newItem);
+        StateHasChanged();
+    }
+
+    private void RemoveItem(SingleItemInfo item)
+    {
+        ItemCalculator.RemoveItem(item);
+        StateHasChanged();
+    }
+
+
+    public void Add() => AddNewItem(
+    new SingleItemInfo
+        {
+            Name = _i++.ToString(), //set a default name for testin purposes
+            Calories = 10
+        }
+    );
+
+}

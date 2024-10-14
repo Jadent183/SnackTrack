@@ -1,0 +1,89 @@
+﻿<MudDialog>
+
+
+    <DialogContent>
+
+        <MudText Typo="Typo.h6"><b>Confirm Item</b></MudText>
+
+
+        <MudPaper Class="d-flex flex-column flex-grow-1 gap-4" Elevation="0">
+
+            <MudPaper Class="d-flex flex-row flex-grow-1 gap-4" Elevation="0">
+
+            @*  IMAGE BOX  *@        
+                <MudPaper Class="d-flex flex-column flex-grow-1 gap-4 holding-box" Elevation="2" Width="50%">
+                </MudPaper>
+
+            @*  NUTRITION FACTS  *@  
+                <MudPaper Class="d-flex flex-column flex-grow-1 gap-4 holding-box" Elevation="2" Width="50%">
+                    <MudText Typo="Typo.h4" Class="ml-3">Nutrition Facts</MudText>
+                    <MudPaper Class="mud-theme-" Width="100%" Height="8px" style="background-color: #000000" />
+
+
+
+                </MudPaper>
+
+
+            </MudPaper>
+
+        </MudPaper>
+
+
+        <MudButton Variant="Variant.Filled" Color="Color.Dark" Href="/" OnClick="SaveItem">Save Item</MudButton>
+        <MudNumericField HideSpinButtons="true" @bind-Value="IntValue" Label="Standard" Variant="Variant.Text" Min="0" />
+
+
+
+
+    </DialogContent>
+
+
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+    </DialogActions>
+</MudDialog>
+
+    @using static CalorieTracker.Components.Pages.CalorieTracker
+
+@code {
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+    [Parameter] public NutritionCalculator ItemCalculator { get; set; } = new NutritionCalculator();
+    
+    //dictionary is a hashmap where the key is the item name and the value is the json data associated with it (pictures, and possible nutrition)
+    [Parameter] public Dictionary<string, object> _item { get; set; } = new();
+    private void Cancel() => MudDialog.Cancel();
+
+
+    public int IntValue { get; set; }
+
+    private void SaveItem()
+    {
+        AddNewItem( new SingleItemInfo
+        {
+            Name = "Test",
+            Calories = IntValue
+        });
+    }
+
+    private void AddNewItem(SingleItemInfo newItem)
+    {
+        ItemCalculator.AddItem(newItem);
+        StateHasChanged();
+    }
+
+    private void RemoveItem(SingleItemInfo item)
+    {
+        ItemCalculator.RemoveItem(item);
+        StateHasChanged();
+    }
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        //Convert the string stored in _item to a nutritionCalculator item
+        if (_item.Any())
+        {
+        }
+
+    }
+}
