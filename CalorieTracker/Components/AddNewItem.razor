@@ -1,4 +1,5 @@
 ﻿@inject IDialogService Dialog
+@using static APIHandlers.NutritionixAPIHandler
 
 
 
@@ -34,7 +35,21 @@
                         <MudText Typo="Typo.body1"><b>Calories</b></MudText>
                         <MudItem xs="12" sm="6" md="4">
                             <MudNumericField HideSpinButtons="true" @bind-Value="CustomItemCalories" Label="Calories" Variant="Variant.Filled" Min="0" Max="200000" />
-                        </MudItem>
+                        </MudItem>     
+                        
+                        @* CUSTOM PICTURE UPLOADING *@
+@*                         <MudText Typo="Typo.body1"><b>Picture</b></MudText>
+                        <MudItem xs="12" sm="6" md="4">
+                            <MudFileUpload T="IBrowserFile" Accept=".png, .jpg" FilesChanged="UploadFiles2" MaximumFileCount="100">
+                                <ActivatorContent>
+                                    <MudButton Variant="Variant.Filled"
+                                               Color="Color.Primary"
+                                               StartIcon="@Icons.Material.Filled.CloudUpload">
+                                        Only image files
+                                    </MudButton>
+                                </ActivatorContent>
+                            </MudFileUpload>
+                    </MudItem> *@
 
                     </MudPaper>
 
@@ -48,6 +63,7 @@
 
         </DialogContent>
     <DialogActions>
+        <MudButton Variant="Variant.Filled" Color="Color.Error" @onclick="GoToConfirm">Go To Confirm</MudButton>
         <MudButton OnClick="Cancel">Cancel</MudButton>
     </DialogActions>
 </MudDialog>
@@ -59,16 +75,38 @@
     [Parameter] public NutritionCalculator ItemCalculator { get; set; } = new NutritionCalculator();
     private readonly DialogOptions _fullScreen = new() { FullScreen = true, CloseButton = true };
     private void Cancel() => MudDialog.Cancel();
-    private Dictionary<string, object> parentSelectedFoods = new Dictionary<string, object>();
+    private object parentSelectedFoods = new object();
     public int CustomItemCalories { get; set; }
     public string CustomItemName { get; set; }
+    IList<IBrowserFile> files = new List<IBrowserFile>();
 
-    private async Task OnSelectedFoodsChanged(Dictionary<string, object> selectedFoods) // Update the parent's selected foods based on the event callback from the child
+    private async Task OnSelectedFoodsChanged(object selectedFoods) // Update the parent's selected foods based on the event callback from the child
     {
         parentSelectedFoods = selectedFoods;
         await OpenConfirmItemAsync(_fullScreen);
     }    
-    
+
+    // private void UploadFiles2(IBrowserFile file)
+    // {
+    //     files.Add(file);
+    //     //TODO upload the files to the server
+    // }
+
+    private async Task GoToConfirm()
+    {
+
+        var parameters = new DialogParameters //Open the next dialogbox for confirming the item
+        {
+            { "ItemCalculator", ItemCalculator },
+            {"_item", null},
+        };
+
+
+        var dialog = await Dialog.ShowAsync<ConfirmItem>(null, parameters, _fullScreen);
+        var result = await dialog.Result;
+
+
+    }
 
 
     private void SaveItem()

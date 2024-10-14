@@ -23,18 +23,16 @@
             <MudChipSet T="SingleItemInfo" AllClosable OnClose="Closed" style="width=100%">
                 @foreach (var item in ItemCalculator.Items)
                 {
-                    <MudChip Value="@item" Text="@item.Name">
-                        <MudImage Src="images/20230827.jpg" Alt="Mony the dog" Elevation="25" Class="rounded-lg" Width="20" Height="20" />
-                        <MudText class="long-text" Typo="Typo.body2">Name = @item.Name</MudText>
-                        <MudNumericField HideSpinButtons="true" @bind-Value="IntValue" Variant="Variant.Text" Min="0" />
-                        <MudText Typo="Typo.body2">g</MudText>
+                    <MudChip Value="@item" Text="@item.Name" @onclick="@(() => ReConfirmItem(item))">
+                        <MudImage Src=@item.PhotoThumb Alt="" Elevation="25" Class="rounded-lg" Width="25" Height="25" />
+                        <MudText class="long-text" Typo="Typo.body2">@item.Name</MudText>
                     </MudChip>
                 }
             </MudChipSet>
 
-            <div class="d-flex flex-column align-center">
+@*             <div class="d-flex flex-column align-center">
                 <MudButton StartIcon="@Icons.Material.Filled.Add" OnClick="Add">Add chip</MudButton>
-            </div>
+            </div> *@
 
         </MudPaper>
 
@@ -116,6 +114,35 @@
     .mud-button:hover {
         background-color: #ffcc80a1;
     }
+
+    .mud-input-control {
+        border: 0;
+        padding: 0;
+        display: flex;
+        flex: 1 1 auto;
+        max-width: 90% !important;
+        position: relative;
+        flex-direction: column;
+        vertical-align: top;
+        background-color: aliceblue;
+    }
+
+        .mud-input-control.mud-input-outlined-with-label {
+            margin-top: 8px;
+            margin-bottom: 8px;
+            margin-left: 25px
+        }
+
+        .mud-input-control > .mud-input-control-input-container {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            background-color: #FFCC80;
+        }
+
+            .mud-input-control > .mud-input-control-input-container > .mud-input-label-outlined.mud-input-label-inputcontrol {
+                background-color: #FFCC80;
+            }
     
 </style>
 
@@ -129,15 +156,55 @@
     private NutritionCalculator ItemCalculator = new NutritionCalculator();
     private readonly DialogOptions _fullScreen = new() { FullScreen = true, CloseButton = true };
 
+    private SingleItemInfo singleItem { get; set; } = new SingleItemInfo();
+
+
+
+
+
+
+
+    // ------------------------------ FOR IMPLEMENTING ACCOUNT FEATURES. Update the ItemCalculator property ON INITIALIZATION, there is a value in there called .Items which is a list of SingleItemInfo objects.
+    
+    // ------------------------------ We want to set the ItemCalculator.Items = AccountName.GetItemsOnCalendarDay(today).Items where AccountName is the DB stored items for that DAY! 
+
+    // ------------------------------ This list of SingleItemInfo objects can then be passed around in the database as well as throughout the frontend/backend
+
+
+
+
+
+
+
 
     public void Closed(MudChip<SingleItemInfo> chip)
     {
         if (chip.Value != null)
         {
-            //ItemCalculator.Items.Remove(chip.Value);
             RemoveItem(chip.Value);
         }
     }
+
+    private async Task ReConfirmItem(SingleItemInfo item)
+    {
+
+        singleItem = item;
+        await OpenConfirmItemAsync(_fullScreen);
+
+    }
+
+    private async Task OpenConfirmItemAsync(DialogOptions options)
+    {
+        var parameters = new DialogParameters //Open the next dialogbox for confirming the item
+        {
+            { "ItemCalculator", ItemCalculator },
+            { "PreExistingItem", singleItem }, // Set a PreExistingItem value so it can updte the existing item
+        };
+
+        var dialog = await Dialog.ShowAsync<ConfirmItem>(null, parameters, options);
+        var result = await dialog.Result;
+    }
+
 
 
     private async Task OpenAddNewItemAsync(DialogOptions options) // Open the dialogbox for "AddNewItem.razor"

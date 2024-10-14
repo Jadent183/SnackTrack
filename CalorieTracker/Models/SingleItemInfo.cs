@@ -16,5 +16,7 @@
         public double? Potassium { get; set; }
         public string? PhotoThumb { get; set; }
         public string? ImageNutritionUrl { get; set; }
+        public string? ServingSize { get; set; }
+        public string? JsonResponse { get; set; }
     }
 }

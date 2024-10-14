@@ -27,9 +27,9 @@ namespace CalorieTracker.APIHandlers
             }
         }
 
-        public static async Task<SingleItemInfo> GetNutritionFactsAsync(string item, string weight)
+        public static async Task<string> GetNutritionFactsAsync(string item)
         {
-            if (string.IsNullOrEmpty(item) || string.IsNullOrEmpty(weight)) return null;
+            //if (string.IsNullOrEmpty(item) || string.IsNullOrEmpty(weight)) return null;
             //weight = weight.Replace(" g", "").Trim();
             using (HttpClient client = new HttpClient())
             {
@@ -41,7 +41,8 @@ namespace CalorieTracker.APIHandlers
                 StringContent content = new StringContent(json, Encoding.UTF8, "application/json");
                 HttpResponseMessage response = await client.PostAsync(url, content);
                 string jsonResponse = await response.Content.ReadAsStringAsync();
-                return JsonToSingleItemConverter.ConvertJsonToSingleItemInfo(jsonResponse, weight);
+                return jsonResponse;
+                //return JsonToSingleItemConverter.ConvertJsonToSingleItemInfo(jsonResponse, weight);
             }
         }
 

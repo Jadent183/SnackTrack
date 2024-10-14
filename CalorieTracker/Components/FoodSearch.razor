@@ -110,7 +110,7 @@
     .mud-input-control > .mud-input-control-input-container > .mud-input-label-outlined.mud-input-label-inputcontrol
     {
             background-color: #FFCC80;
-        }
+    }
 
         .search-input::placeholder {
             color: #E4C2C1;
@@ -139,10 +139,11 @@
 
 
 @code {
-    [Parameter] public EventCallback<Dictionary<string, object>> SelectedFoodsChanged { get; set; }
+    [Parameter] public EventCallback<object> SelectedFoodsChanged { get; set; }
     private string searchTerm = "";
-    private Dictionary<string, object> selectedFoods = new Dictionary<string, object>();
+    private object selectedFoodItem = new object();
     private Dictionary<string, object> foodsMap = new Dictionary<string, object>();
+    private object test = new object();
 
     private async Task<IEnumerable<string>> SearchFood(string value, CancellationToken cancellationToken)
     {
@@ -181,19 +182,28 @@
     private void OnSearchTermChanged(string value)
     {
         searchTerm = value;
-        if (!string.IsNullOrWhiteSpace(value) && foodsMap.ContainsKey(value) && !selectedFoods.ContainsKey(value))
+        if (!string.IsNullOrWhiteSpace(value) && foodsMap.ContainsKey(value))
         {
-            selectedFoods[value] = foodsMap[value];
-            SelectedFoodsChanged.InvokeAsync(selectedFoods);
+            //selectedFoods = new Dictionary<string, object>(); //empty the dictionary so only sending one item
+            selectedFoodItem = new object();
+            selectedFoodItem = foodsMap[value];
+
+
+
+            // selectedFoods[value] = foodsMap[value];
+            SelectedFoodsChanged.InvokeAsync(selectedFoodItem);
             searchTerm = "";
             StateHasChanged();
+
+
+
         }
     }
 
     private void ClearSelectedFoods()
     {
-        selectedFoods.Clear();
-        SelectedFoodsChanged.InvokeAsync(selectedFoods);
+        selectedFoodItem = new object();
+        SelectedFoodsChanged.InvokeAsync(selectedFoodItem);
         StateHasChanged();
     }
 }

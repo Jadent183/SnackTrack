@@ -1,68 +1,97 @@
-﻿<MudDialog>
-
-
+﻿@page "/confirm"
+@using static APIHandlers.NutritionixAPIHandler
+@using System.Text.Json
+<MudDialog>
     <DialogContent>
 
         <MudText Typo="Typo.h6"><b>Confirm Item</b></MudText>
 
 
-        <MudPaper Class="d-flex flex-column flex-grow-1 gap-4" Elevation="0">
+            <MudPaper Class="d-flex flex-column flex-grow-1 gap-4" Elevation="0">
+
 
             <MudPaper Class="d-flex flex-row flex-grow-1 gap-4" Elevation="0">
-
-            @*  IMAGE BOX  *@        
-                <MudPaper Class="d-flex flex-column flex-grow-1 gap-4 holding-box" Elevation="2" Width="50%">
-                </MudPaper>
-
-            @*  NUTRITION FACTS  *@  
-                <MudPaper Class="d-flex flex-column flex-grow-1 gap-4 holding-box" Elevation="2" Width="50%">
-                    <MudText Typo="Typo.h4" Class="ml-3">Nutrition Facts</MudText>
-                    <MudPaper Class="mud-theme-" Width="100%" Height="8px" style="background-color: #000000" />
-
-
-
-                </MudPaper>
-
-
+                @* UPDATE WEIGHT *@
+                <MudNumericField HideSpinButtons="true" @bind-Value="WeightInGrams" Label="Weight (g)" Variant="Variant.Text" Min="0"/>
+                <MudButton Variant="Variant.Filled" class="button-color" OnClick="UpdateWeightInGrams">Update Weight</MudButton>
             </MudPaper>
+
+        
+        
+            <MudPaper Class="d-flex flex-column flex-grow-1 gap-4" Elevation="0">
+                <MudPaper Class="d-flex flex-row flex-grow-1 gap-4" Elevation="0">
+                    @if (ItemInfo != null)
+                    {
+                        @*  IMAGE BOX  *@
+                        <MudPaper Class="d-flex flex-column flex-grow-1 gap-4 holding-box" Elevation="2" Width="50%" Style="align-items: center; justify-content: center">
+                            <MudImage Src="@(ItemInfo.PhotoThumb)" Alt="@(ItemInfo.Name)" Width="150" Height="150" />
+                        </MudPaper>
+                        @*  NUTRITION FACTS  *@
+                        <MudPaper Class="d-flex flex-column flex-grow-1 gap-4 holding-box" Elevation="2" Width="50%">
+                            <MudText Typo="Typo.h4" Class="ml-3">Nutrition Facts</MudText>
+                            <MudPaper Class="mud-theme-" Width="100%" Height="8px" style="background-color: #000000" />
+
+                            <MudText Typo="Typo.h5" Class="ml-3">Calories <b>@ItemInfo.Calories</b></MudText>
+                            <MudPaper Class="mud-theme-" Width="100%" Height="4px" style="background-color: #000000" />
+
+                            <MudText Typo="Typo.h6" Class="ml-3">Fat <b>@ItemInfo.TotalFat g</b></MudText>
+                            <MudText Typo="Typo.h6" Class="ml-3">Sodium <b>@ItemInfo.Sodium g</b></MudText>
+                            <MudText Typo="Typo.h6" Class="ml-3">Carbs <b>@ItemInfo.Carbohydrates g</b></MudText>
+                            <MudText Typo="Typo.h6" Class="ml-3">Protein <b>@ItemInfo.Protein g</b></MudText>
+                            <MudText Typo="Typo.h6" Class="ml-3">Sugar <b>@ItemInfo.Sugars g</b></MudText>
+                            <MudText Typo="Typo.h6" Class="ml-3">Fiber <b>@ItemInfo.Fiber g</b></MudText>
+                            <MudText Typo="Typo.h6" Class="ml-3">Serving Size <b>@ItemInfo.ServingSize</b></MudText>
+                        </MudPaper>
+                    }
+                    else
+                    {
+                        <MudAlert Severity="Severity.Error">Item not found or null.</MudAlert>
+                    }
+                </MudPaper>
+            </MudPaper>
+
+
+            <MudPaper Class="d-flex flex-row flex-grow-1 gap-4" Elevation="0">
+                @* UPDATE CALORIES *@
+                <MudNumericField HideSpinButtons="true" @bind-Value="CustomCalories" Label="Calories" Variant="Variant.Text" Min="0" />
+                <MudButton Variant="Variant.Filled" class="button-color" OnClick="UpdateCustomCalories">Update Calories</MudButton>
+            </MudPaper>
+
+
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" Href="/" OnClick="SaveItem">Save Item</MudButton>
+
 
         </MudPaper>
 
-
-        <MudButton Variant="Variant.Filled" Color="Color.Dark" Href="/" OnClick="SaveItem">Save Item</MudButton>
-        <MudNumericField HideSpinButtons="true" @bind-Value="IntValue" Label="Standard" Variant="Variant.Text" Min="0" />
-
-
-
-
     </DialogContent>
-
-
     <DialogActions>
         <MudButton OnClick="Cancel">Cancel</MudButton>
     </DialogActions>
 </MudDialog>
 
-    @using static CalorieTracker.Components.Pages.CalorieTracker
-
 @code {
     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
     [Parameter] public NutritionCalculator ItemCalculator { get; set; } = new NutritionCalculator();
-    
-    //dictionary is a hashmap where the key is the item name and the value is the json data associated with it (pictures, and possible nutrition)
-    [Parameter] public Dictionary<string, object> _item { get; set; } = new();
+    [Parameter] public object? _item { get; set; } = null;
+    [Parameter] public SingleItemInfo? PreExistingItem { get; set; }
+
+    private int WeightInGrams { get; set; }
+    private int CustomCalories { get; set; }
+    private string jsonResponse { get; set; } = "";
+    public SingleItemInfo ItemInfo { get; set; } = new SingleItemInfo();
+
+
     private void Cancel() => MudDialog.Cancel();
-
-
-    public int IntValue { get; set; }
 
     private void SaveItem()
     {
-        AddNewItem( new SingleItemInfo
+        if (PreExistingItem != null) // this means an item is being updated
         {
-            Name = "Test",
-            Calories = IntValue
-        });
+            RemoveItem(PreExistingItem); // Remove the original item from the list when updating an item
+        }
+
+        AddNewItem(ItemInfo);
+        MudDialog.Close(DialogResult.Ok(true));
     }
 
     private void AddNewItem(SingleItemInfo newItem)
@@ -77,13 +106,70 @@
         StateHasChanged();
     }
 
-
     protected override async Task OnInitializedAsync()
     {
-        //Convert the string stored in _item to a nutritionCalculator item
-        if (_item.Any())
+        //jsonResponse = NutritionApiResponses.GalaAppleResponse;
+
+        if (PreExistingItem != null) // The case where an item is being updated
         {
+            //PreExistingItem should have a json data associated with it
+            ItemInfo.JsonResponse = PreExistingItem.JsonResponse;
+            ItemInfo = PreExistingItem;
+        }
+        else if (_item == null && PreExistingItem == null) // Edge case
+        {
+            ItemInfo.JsonResponse = NutritionApiResponses.GalaAppleResponse;
+            ItemInfo = JsonToSingleItemConverter.ConvertJsonToSingleItemInfo(ItemInfo.JsonResponse); //convert json into singleiteminfo
+        }
+        else // The case where it is a new item being added
+        {
+            // Save the jsonResponse in the ItemInfo object to avoid calling the API again on updates
+            ItemInfo.JsonResponse = await GetNutritionFactsAsync(GetFoodName(_item)); //get json from API
+            ItemInfo = JsonToSingleItemConverter.ConvertJsonToSingleItemInfo(ItemInfo.JsonResponse); //convert json into singleiteminfo
         }
 
+        await Task.Delay(10);
     }
+
+    private void UpdateWeightInGrams()
+    {
+        // Use ItemInfo to display the new nutritional information
+
+        if (WeightInGrams == 0) // Update the nutrition to the default serving size
+        {
+            ItemInfo = JsonToSingleItemConverter.ConvertJsonToSingleItemInfo(ItemInfo.JsonResponse);
+        }
+        else // Update nutrition info with the new weight in grams
+        {
+            ItemInfo = JsonToSingleItemConverter.CalculateNutritionInfo(ItemInfo, WeightInGrams);
+        }
+
+        StateHasChanged();  // Force a re-render of the UI
+    }    
+
+    private void UpdateCustomCalories()
+    {
+        if (CustomCalories >= 0) // Update the Calories to customize calories
+        {
+            ItemInfo.Calories = CustomCalories;
+        }
+
+        StateHasChanged();  // Force a re-render of the UI
+    }
+
+
+    public static class NutritionApiResponses
+    {
+        public const string GalaAppleResponse = @"{""foods"":[{""food_name"":""gala apple"",""brand_name"":null,""serving_qty"":1,""serving_unit"":""medium"",""serving_weight_grams"":172,""nf_calories"":98.04,""nf_total_fat"":0.21,""nf_saturated_fat"":null,""nf_cholesterol"":null,""nf_sodium"":1.72,""nf_total_carbohydrate"":23.53,""nf_dietary_fiber"":3.96,""nf_sugars"":17.84,""nf_protein"":0.43,""nf_potassium"":185.76,""nf_p"":18.92,""full_nutrients"":[{""attr_id"":203,""value"":0.43},{""attr_id"":204,""value"":0.2064},{""attr_id"":205,""value"":23.5296},{""attr_id"":207,""value"":0.344},{""attr_id"":208,""value"":98.04},{""attr_id"":209,""value"":0.086},{""attr_id"":210,""value"":4.7816},{""attr_id"":211,""value"":2.8552},{""attr_id"":212,""value"":10.1996},{""attr_id"":213,""value"":0},{""attr_id"":214,""value"":0},{""attr_id"":255,""value"":147.5072},{""attr_id"":268,""value"":407.64},{""attr_id"":269,""value"":17.8364},{""attr_id"":287,""value"":0},{""attr_id"":291,""value"":3.956},{""attr_id"":301,""value"":12.04},{""attr_id"":303,""value"":0.2064},{""attr_id"":304,""value"":8.6},{""attr_id"":305,""value"":18.92},{""attr_id"":306,""value"":185.76},{""attr_id"":307,""value"":1.72},{""attr_id"":309,""value"":0.086},{""attr_id"":312,""value"":0.0361},{""attr_id"":315,""value"":0.0636},{""attr_id"":317,""value"":0},{""attr_id"":318,""value"":48.16},{""attr_id"":320,""value"":1.72},{""attr_id"":321,""value"":18.92},{""attr_id"":322,""value"":0},{""attr_id"":323,""value"":0.3096},{""attr_id"":334,""value"":18.92},{""attr_id"":337,""value"":0},{""attr_id"":338,""value"":18.92},{""attr_id"":404,""value"":0.0292},{""attr_id"":405,""value"":0.0499},{""attr_id"":406,""value"":0.129},{""attr_id"":410,""value"":0.0946},{""attr_id"":415,""value"":0.0843},{""attr_id"":417,""value"":5.16},{""attr_id"":421,""value"":5.848},{""attr_id"":429,""value"":0},{""attr_id"":430,""value"":2.236},{""attr_id"":432,""value"":5.16},{""attr_id"":605,""value"":0}],""nix_brand_name"":null,""nix_brand_id"":null,""nix_item_name"":null,""nix_item_id"":null,""upc"":null,""consumed_at"":""2024-10-14T20:55:59+00:00"",""metadata"":{""is_raw_food"":false},""source"":1,""ndb_no"":9503,""tags"":{""item"":""gala apple"",""measure"":null,""quantity"":""1.0"",""food_group"":3,""tag_id"":2049},""alt_measures"":[{""serving_weight"":157,""measure"":""small"",""seq"":4,""qty"":1},{""serving_weight"":172,""measure"":""medium"",""seq"":3,""qty"":1},{""serving_weight"":200,""measure"":""large"",""seq"":2,""qty"":1},{""serving_weight"":109,""measure"":""cup, sliced"",""seq"":1,""qty"":1},{""serving_weight"":100,""measure"":""g"",""seq"":null,""qty"":100},{""serving_weight"":28.3495,""measure"":""wt. oz"",""seq"":null,""qty"":1}],""lat"":null,""lng"":null,""meal_type"":3,""photo"":{""thumb"":""https://nix-tag-images.s3.amazonaws.com/2049_thumb.jpg"",""highres"":""https://nix-tag-images.s3.amazonaws.com/2049_highres.jpg"",""is_user_uploaded"":false},""sub_recipe"":null,""class_code"":null,""brick_code"":null,""tag_id"":null}]}";
+    }
+
+
+
+    private string GetFoodName(object item)
+    {
+        if (item == null) return "Unknown";
+        var jsonElement = JsonSerializer.Deserialize<JsonElement>(JsonSerializer.Serialize(item));
+        return jsonElement.TryGetProperty("FoodName", out var foodName) ? foodName.GetString() : "Unknown";
+    }
+
 }
